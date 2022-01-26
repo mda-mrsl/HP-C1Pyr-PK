@@ -1,4 +1,4 @@
-function [Mxyev, Mxyiv, vb, Mev, Miv] = P2L2(vars,fdv)
+function [Mxyev, Mxyiv, vb, Mzev, Mziv] = P2L2(vars,fdv)
 %Format: function [Mxyev, Mxyiv, vb, Mev, Miv] = P2LBv4(vars,fdv)
 %
 %input:
@@ -20,10 +20,10 @@ function [Mxyev, Mxyiv, vb, Mev, Miv] = P2L2(vars,fdv)
     % Mxyev                 [2 x NTP] extravascular observed [Pyr;Lac] 
     % Mxyiv                 [2 x NTP] intravascular observed [Pyr;Lac]
     % vb                    vascular blood vol fraction
-    % Mev                   [2 x NTP] extravascular longitudinal [Pyr;Lac]
-    % Miv                   [2 x NTP] intravascular observed [Pyr;Lac]
+    % Mzev                   [2 x NTP] extravascular longitudinal [Pyr;Lac]
+    % Mziv                   [2 x NTP] intravascular observed [Pyr;Lac]
 %
-% Note Mev,Miv reflects z-directred magnetization before the excitation pulse ,  
+% Note Mzev,Mziv reflects z-directred magnetization before the excitation pulse ,  
 %  while Mxy reflects transverse magnetization due to pulse.
 %
 % Note total observed signal is [Pyr;Lac] = (1-vb)*Mxyev + vb*Mxyiv
@@ -55,9 +55,9 @@ function [Mxyev, Mxyiv, vb, Mev, Miv] = P2L2(vars,fdv)
     
     %Initialize return variables:
     Mxyev=zeros(2,fdv.ntp);
-    Mev =zeros(2,fdv.ntp);
+    Mzev =zeros(2,fdv.ntp);
     Mxyiv=zeros(2,fdv.ntp);
-    Miv =zeros(2,fdv.ntp);
+    Mziv =zeros(2,fdv.ntp);
 
     %Manage trivial case of vb=0: no signal, or vb=1: all vessel
     if (vb<eps) 
@@ -69,7 +69,7 @@ function [Mxyev, Mxyiv, vb, Mev, Miv] = P2L2(vars,fdv)
         % Combine segments: ** NOTE HERE ASSUMES EQUAL WEIGHTING **
         for ii=1:fdv.ntp 
             Mxyiv(:,ii)=mean(MxyivSeg(:,(ii-1)*fdv.NSeg+1:ii*fdv.NSeg),2);
-            Miv(:,ii)=mean(MivSeg(:,(ii-1)*fdv.NSeg+1:ii*fdv.NSeg),2);
+            Mziv(:,ii)=mean(MivSeg(:,(ii-1)*fdv.NSeg+1:ii*fdv.NSeg),2);
         end
         return
     end
@@ -93,10 +93,10 @@ function [Mxyev, Mxyiv, vb, Mev, Miv] = P2L2(vars,fdv)
     
     %Calculate signal evolution each TR:
     
-    MevSegIC=[x.P0; x.L0]; %Set Initial Conditions
+    MzevSegIC=[x.P0; x.L0]; %Set Initial Conditions
     for ii=1:fdv.ntp
         MxyevSeg=zeros(2,fdv.NSeg);
-        MevSeg =zeros(2,fdv.NSeg);
+        MzevSeg =zeros(2,fdv.NSeg);
         for jj=1:fdv.NSeg
             iiseg=(ii-1)*(fdv.NSeg)+jj; % Works when NSeg=1 too
             TR=fdv.TR(iiseg);
@@ -104,12 +104,12 @@ function [Mxyev, Mxyiv, vb, Mev, Miv] = P2L2(vars,fdv)
             %First account for EV signal already present and its evolution
             %
             %Longitudinal magnetization available at the start of each segment:
-            MevSeg(:,jj)=MevSegIC;
+            MzevSeg(:,jj)=MzevSegIC;
             %Signal observed at each excitation, at start of segment:
-            MxyevSeg(:,jj)=MevSegIC.*sind(fdv.FlipAngle(:,iiseg));
+            MxyevSeg(:,jj)=MzevSegIC.*sind(fdv.FlipAngle(:,iiseg));
             %At the end of this TR, Mz evolves to contribute to IC for next:
             if iiseg<fdv.NFlips % Don't need to calc after last datapoint
-                MevSeg1=(exp(dD*TR)).*(P\(MevSegIC.*cosd(fdv.FlipAngle(:,iiseg))));
+                MzevSeg1=(exp(dD*TR)).*(P\(MzevSegIC.*cosd(fdv.FlipAngle(:,iiseg))));
                 %
                 %Now calculate new spins flowing into the system
                 %
@@ -120,25 +120,27 @@ function [Mxyev, Mxyiv, vb, Mev, Miv] = P2L2(vars,fdv)
                 b=dff1;
                 m=(dff2-dff1)/TR;
                 %At the end of this TR, inflowing spins will lead to:
-                MevSeg2a=exp(dD*TR).*(-b./dD).*(exp(-dD*TR)-1);
-                MevSeg2b=exp(dD*TR).*m.*(((-TR./dD)-(1./dD./dD)).*exp(-dD*TR)+(1./dD./dD));
-                
+                %MevSeg2a=exp(dD*TR).*(-b./dD).*(exp(-dD*TR)-1);
+                %MevSeg2b=exp(dD*TR).*m.*(((-TR./dD)-(1./dD./dD)).*exp(-dD*TR)+(1./dD./dD));
+                %slightly more efficient way to calculate:
+                MevSeg2a=(-b./dD).*(1-exp(dD*TR));
+                MevSeg2b=m.*(((-TR./dD)-(1./dD./dD))+exp(dD*TR).*(1./dD./dD));
                 %Total signal at end of TR equals IC for next TR:
-                MevSegIC = P*(MevSeg1 + kvedve*(MevSeg2a+MevSeg2b));
+                MzevSegIC = P*(MzevSeg1 + kvedve*(MevSeg2a+MevSeg2b));
                
             end
         end
         if (fdv.NSeg>1) %manage signal from segmented acquisitions
             %sizemxyev=size(mean(MxyevSeg))
             Mxyev(:,ii)=mean(MxyevSeg,2);
-            Mev(:,ii) =mean(MevSeg,2);
+            Mzev(:,ii) =mean(MzevSeg,2);
             Mxyiv(:,ii)=mean(MxyivSeg(:,(ii-1)*fdv.NSeg+1:ii*fdv.NSeg),2);
-            Miv(:,ii) =mean(MivSeg(:,(ii-1)*fdv.NSeg+1:ii*fdv.NSeg),2);
+            Mziv(:,ii) =mean(MivSeg(:,(ii-1)*fdv.NSeg+1:ii*fdv.NSeg),2);
         else
             Mxyev(:,ii)=MxyevSeg;
-            Mev(:,ii) =MevSeg;
+            Mzev(:,ii) =MzevSeg;
             Mxyiv(:,ii)=MxyivSeg(:,ii);
-            Miv(:,ii) =MivSeg(:,ii);
+            Mziv(:,ii) =MivSeg(:,ii);
         end            
     end
 

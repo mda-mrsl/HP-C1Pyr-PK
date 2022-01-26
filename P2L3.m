@@ -42,6 +42,9 @@ function [Mxyev, Mxyiv, vols, Mzev, Mziv] = P2L3(vars,fdv)
     if ~isfield(x,{'kecl'}) %set equal if not specified
         x.kecl=x.kecp;
     end
+    if isfield(x,{'FA'}) % sub fit values for fdv values
+        fdv.FlipAngle=x.FA*ones(size(fdv.FlipAngle));
+    end
     vb=x.vb;
     ve=(1-vb)*x.vef;
     vc=1-vb-ve;
@@ -151,9 +154,11 @@ function [Mxyev, Mxyiv, vols, Mzev, Mziv] = P2L3(vars,fdv)
                 b=dff1;
                 m=(dff2-dff1)/TR;
                 %At the end of this TR, inflowing spins will lead to:
-                MzevSeg2a=exp(dD*TR).*(-b./dD).*(exp(-dD*TR)-1);
-                MzevSeg2b=exp(dD*TR).*m.*(((-TR./dD)-(1./dD./dD)).*exp(-dD*TR)+(1./dD./dD));
-                
+                %MzevSeg2a=exp(dD*TR).*(-b./dD).*(exp(-dD*TR)-1);
+                %MzevSeg2b=exp(dD*TR).*m.*(((-TR./dD)-(1./dD./dD)).*exp(-dD*TR)+(1./dD./dD));
+                %slightly more efficient way to calculate:
+                MzevSeg2a=(-b./dD).*(1-exp(dD*TR));
+                MzevSeg2b=m.*(((-TR./dD)-(1./dD./dD))+exp(dD*TR).*(1./dD./dD));
                 %Total signal at end of TR equals IC for next TR:
                 MzevSegIC = P*(MzevSeg1 + kvedve*(MzevSeg2a+MzevSeg2b));
             end

@@ -31,7 +31,7 @@ fdv.VIFL=zeros(1,fdv.NFlips);
 
 %Placeholder for data to be fit
 fdv.data=ones(2,fdv.ntp);
-fdv.Name='HP Model Demo';
+fdv.Name='HP 3-Compartment Model Demo';
 
 %Other miscellaneous
 fdv.verbose=0;
@@ -69,7 +69,7 @@ for ii=1:nruns
     end
 end
 
-fprintf('Kpla in = %5.3f; Kpla out = %5.3f\n',parms(1),bestfits(1));
+fprintf('Kpl in = %5.3f; Kpl out = %5.3f\n',parms(1),bestfits(1));
 
 %% Plot
 

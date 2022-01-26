@@ -29,7 +29,7 @@ fdva.FlipAngle=FA*ones(2,fdva.NFlips);
 %fdv.VIFP=gampdf(fdv.taxis-10,2.8,4.5);
 fdva.data=zeros(2,fdva.NFlips);
 fdva.data(1,:)=gampdf(fdva.taxis-10,2.8,4.5).*sind(fdva.FlipAngle(1,:));
-fdva.Name='Test P2LAv4';
+fdva.Name='Test P2L1';
 fdva.verbose=0;
 
 % fdv=struct('fitvars',{'kpl' 'kve' 'vb' 'VIFScale'},...
@@ -46,7 +46,7 @@ fdva.data=Mxy;
 
 jbopts=optimset('display','off');
 [fits,resid] = lsqnonlin(@(x) P2L1Err(x,fdva),0.01,0,Inf,jbopts);
-fprintf('Kpla in = %5.3f; Kpla out = %5.3f\n',parms,fits);
+fprintf('Kpl'''' in = %5.3f; Kpl'''' out = %5.3f\n',parms,fits);
 
 %% Plot
 
