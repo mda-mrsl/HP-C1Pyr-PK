@@ -16,3 +16,13 @@ Each of these groups of scripts are also accompanied by a test script (TestP2L#.
 Please do not hesitate to contact with any questions, comments, concerns, or suggestions for improvement:
 Jim Bankson
 jbankson@mdanderson.org
+
+
+Python scripts are also available as a package on pypi repository. Install via 
+pip install pkhpc1pyr
+
+Python package code available at github.com/RytyB/HP-C1Pyr-PK-python
+
+For questions concerning the python implementation please contact
+Ryan Boyce 
+rboyce@mdanderson.org
